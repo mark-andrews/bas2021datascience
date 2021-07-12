@@ -1,6 +1,6 @@
-# Statistics and data science
+# Advanced Statistics and Data Science training course
 
-In this four day course (Sept 14, 16, 21), we provide an introduction to some
+In this four day course (Sept 14, Sept 16, Sept 21, Sept 23), we provide an introduction to some
 advanced topics in statistics and data science.  In particular, we will cover
 the following topics: Data wrangling using `dplyr` and `tidyr`; data
 visualization using `ggplot`; how to read in and process and visualize NetCDF
