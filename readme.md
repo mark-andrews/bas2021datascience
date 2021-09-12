@@ -32,9 +32,11 @@ Minimal prior experience with R and RStudio is required. Attendees should be fam
 
 ## Equipment and software requirements
 
-Attendees of the course will need to use RStudio. Most people will want to use their own computer on which they install the RStudio desktop software. This can be done Macs, Windows, and Linux, though not on tablets or other mobile devices. Instructions on how to install and configure all the required software, which is all free and open source, will be provided before the start of the course. We will also provide time at the beginning of the workshops to ensure that all software is installed and configured properly. 
+Attendees of the course will need to use RStudio. Most people will want to use their own computer on which they install the RStudio desktop software. This can be done Macs, Windows, and Linux, though not on tablets or other mobile devices. 
+Instructions on how to install the required software is provided [here](software.md).
+We will also provide time at the beginning of the workshops to ensure that all software is installed and configured properly. 
 
-An alternative to using a local installation of RStudio is to use RStudio cloud (https://rstudio.cloud/). This is a free to use and full featured web based RStudio. It is not suitable for computationally intensive work but everything done in this class can be done using RStudio cloud. 
+An alternative to using a local installation of RStudio is to use RStudio cloud (https://rstudio.cloud/). This is a free to use and full featured web based RStudio. It is not suitable for computationally intensive work but everything done in this class can be done using RStudio cloud. It can be used for most of the topics we cover in this course, but it would not be suitable for dealing with large NetCDF files, which we will cover on Day 2 (Topic 3).
 
 
 # Course programme 
