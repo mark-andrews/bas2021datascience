@@ -6,10 +6,10 @@ glimpse(blp_df)
 
 # dplyr verbs:
 
-# select
-# rename 
-# slice
-# filter 
+# select -
+# rename - 
+# slice -
+# filter  -
 # mutate
 # arrange
 
@@ -80,3 +80,130 @@ slice(blp_df, -(1:3))
 slice(blp_df, n())
 slice(blp_df, 1000)
 slice(blp_df, (n()-5):n())
+
+# Filtering with filter ---------------------------------------------------
+
+filter(blp_df, lex == 'W')
+filter(blp_df, lex == 'W', resp == 'W')
+
+filter(blp_df, rt < 500)
+filter(blp_df, lex == 'W', rt < 500)
+filter(blp_df, lex == 'W' | rt < 500)
+filter(blp_df, !(lex == 'W') | rt < 500)
+
+filter(blp_df, if_any(everything(), is.na))
+filter(blp_df, if_all(everything(), is.na))
+
+filter(blp_df, if_all(rt:rt.raw, ~ . < 500))
+
+less_than_500 <- function(x) {x < 500} 
+
+filter(blp_df, if_all(rt:rt.raw, less_than_500))
+filter(blp_df, if_all(rt:rt.raw, function(x) {x < 500} ))
+filter(blp_df, if_all(rt:rt.raw, ~ . < 500))
+filter(blp_df, if_any(rt:rt.raw, ~ . < 500))
+
+filter(blp_df, if_all(rt:rt.raw, ~ . < median(., na.rm = T)))
+filter(blp_df, if_any(rt:rt.raw, ~ . < median(., na.rm = T)))
+filter(blp_df, if_all(where(is.numeric), ~ . < median(., na.rm = T)))
+filter(blp_df, if_any(rt:rt.raw, ~ (. < median(., na.rm = T)) & (. < mean(., na.rm = T))))
+       
+
+
+# Adding new columns with mutate ------------------------------------------
+
+mutate(blp_df, accuracy = lex == resp)
+
+mutate(blp_df,
+       accuracy = lex == resp,
+       word_length = str_length(spell))
+
+
+mutate(blp_df,
+       accuracy = lex == resp,
+       word_length = str_length(spell),
+       long_word = word_length > 5)
+
+
+mutate(blp_df,
+       lex = as.factor(lex),
+       spell = as.factor(spell),
+       resp = as.factor(resp)
+)
+
+mutate(blp_df, 
+       across(lex:resp, as.factor)
+)
+
+mutate(blp_df, 
+       across(c(lex, spell, resp), as.factor)
+)
+
+mutate(blp_df, 
+       across(where(is.character), as.factor)
+)
+
+mutate(blp_df,
+       across(where(is.numeric), ~as.vector(scale(.)))
+)
+
+mutate(blp_df,
+       lex = recode(lex, 'W' = 'word', 'N' = 'nonword')
+)
+
+mutate(blp_df,
+       lex = recode(lex, 'W' = 'word', 'N' = 'nonword'),
+       resp = recode(resp, 'W' = 'word', 'N' = 'nonword'),
+)
+
+mutate(blp_df,
+       across(c(lex, resp), 
+              ~recode(., 'W' = 'word', 'N' = 'nonword')
+       )
+)
+
+mutate(blp_df, fast_rt = rt < 400)
+
+mutate(blp_df, 
+       rt_speed = if_else(rt < 400, 'fast', 'slow'))
+
+mutate(blp_df,
+       rt_speed = case_when(
+         rt > 900 ~ 'slow',
+         rt < 600 ~ 'fast',
+         TRUE ~ 'medium' 
+       )
+)
+
+transmute(blp_df,
+          accuracy = lex == resp,
+          word_length = str_length(spell),
+          long_word = word_length > 5)
+
+
+# Sorting with arrange ----------------------------------------------------
+
+arrange(blp_df, rt)
+arrange(blp_df, desc(rt))
+arrange(blp_df, spell)
+arrange(blp_df, desc(spell))
+arrange(blp_df, participant)
+arrange(blp_df, participant, rt)
+
+
+# Pipelines with pipes ----------------------------------------------------
+
+x <- c(1, 2, 5, 10, 20)
+log(x)
+sqrt(log(x))
+sum(sqrt(log(x)))
+log(sum(sqrt(log(x))))
+
+log_x <- log(x)
+sqrt(log_x)
+
+log(x)
+
+x %>% log()
+
+x %>% log() %>% sqrt() %>% sum() %>% log()
