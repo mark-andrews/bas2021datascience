@@ -209,6 +209,19 @@ ggplot(ToothGrowth,
            colour = supp, 
            group = interaction(supp, dose))
 ) + geom_boxplot() +
+  geom_jitter(position = position_jitterdodge(
+    dodge.width = 1/3,
+    jitter.width = 1/3 * 0.5), 
+              size = 0.85, 
+              alpha = 0.75)
+
+
+ggplot(ToothGrowth,
+       aes(x = dose, 
+           y = len, 
+           colour = supp, 
+           group = interaction(supp, dose))
+) + geom_boxplot() +
   geom_jitter(position = position_jitterdodge(dodge.width = 1/3, 
                                               jitter.width = 1/3 * 0.5), 
               size = 0.85, 
@@ -280,3 +293,68 @@ ggplot(sleep_df,
   stat_smooth(method = 'lm', se = FALSE) +
   facet_wrap(~Subject) +
   theme_minimal()
+
+
+
+# Working with NetCDF -----------------------------------------------------
+
+ice_file <- system.file("extdata", "ifremer", "20171002.nc", package = "tidync", mustWork = TRUE)
+library(tidync)
+tidync(ice_file)
+
+metR::GlanceNetCDF(ice_file)
+RNetCDF::print.nc(RNetCDF::open.nc(ice_file))
+
+
+
+# gunzip a nc.gz file -----------------------------------------------------
+
+R.utils::gunzip('gistemp1200_GHCNv4_ERSSTv5.nc.gz', remove = FALSE)
+gistempfile <- 'gistemp1200_GHCNv4_ERSSTv5.nc'
+
+tidync(gistempfile)
+metR::GlanceNetCDF(gistempfile)
+
+f <- ncdf4::nc_open(gistempfile)
+ncdf4::ncvar_get(f, 'time')
+ncdf4::ncvar_get(f, 'lon')
+ncdf4::ncvar_get(f, 'lat')
+
+
+## Pull out *all* variables from active grid
+## and return as a tibble
+gistemp_df <- tidync(gistempfile) %>% 
+  hyper_tibble()
+
+library(lubridate)
+ymd('1800-01-01')
+
+gistemp_df %>% 
+  mutate(date = ymd('1800-01-01') + time) %>% 
+  tail()
+
+tidync(gistempfile)
+
+tidync(gistempfile) %>% 
+  hyper_filter(time = time < 50000)
+
+tidync(gistempfile) %>% 
+  hyper_filter(time = index < 10)
+
+
+gistemp_df %>% 
+  mutate(date = ymd('1800-01-01') + time) %>% 
+  filter(time < 50000) %>%
+  tail()
+
+
+gistemp_1700_df <- tidync(gistempfile) %>% 
+  hyper_filter(time = index == 1700) %>% 
+  hyper_tibble() %>% 
+  mutate(date = ymd('1800-01-01') + time)
+
+ggplot(gistemp_1700_df,
+       aes(x = lon, y = lat, fill = tempanomaly)
+) + geom_raster() +
+  scale_fill_gradient2(low = 'blue', high = 'red') +
+  coord_quickmap()
