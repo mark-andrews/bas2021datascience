@@ -115,3 +115,168 @@ ggplot(titanic_df,
 ggplot(titanic_df,
        aes(x = survived, fill = sex)
 ) + geom_bar()
+
+
+ggplot(titanic_df,
+       aes(x = survived, fill = sex)
+) + geom_bar(position = 'dodge')
+
+ggplot(titanic_df,
+       aes(x = survived, fill = sex)
+) + geom_bar(position = 'identity',
+             alpha = 0.5)
+
+
+car_df <- read_csv("https://raw.githubusercontent.com/mark-andrews/bas2021datascience/master/data/carprice.csv")
+
+car_df %>% 
+  group_by(Type) %>% 
+  summarise(price = mean(Price)) %>% 
+  ggplot(aes(x = Type, y = price)) + 
+  geom_bar(stat = 'identity')
+
+car_df %>% 
+  group_by(Type) %>% 
+  summarise(price = mean(Price)) %>% 
+  ggplot(aes(x = Type, y = price)) + 
+  geom_col()
+
+
+# Boxplots ----------------------------------------------------------------
+
+ggplot(swiss,
+       aes(x = '', y = Fertility)
+) + geom_boxplot(width = 0.25) 
+
+ggplot(swiss,
+       aes(x = '', y = Fertility)
+) + geom_boxplot(width = 0.25) +
+  coord_flip()
+
+ggplot(swiss,
+       aes(x = '', y = Fertility)
+) + geom_boxplot(width = 0.25) +
+  coord_flip() +
+  geom_point()
+
+ggplot(swiss,
+       aes(x = '', y = Fertility)
+) + geom_boxplot(width = 0.25, outlier.shape = NA) +
+  coord_flip() +
+  geom_jitter(width = 0.05)
+
+swiss %>% 
+  mutate(catholic = Catholic > 50) %>% 
+  ggplot(aes(y = Fertility, x = catholic)) +
+  geom_boxplot(width = 0.25, outlier.shape = NA) +
+  geom_jitter(width = 0.05, size = 0.5)
+
+swiss %>% 
+  mutate(catholic = Catholic > 50) %>% 
+  ggplot(aes(y = Fertility, x = catholic, colour = catholic)) +
+  geom_boxplot(width = 0.25, outlier.shape = NA) +
+  geom_jitter(width = 0.05, size = 0.5)
+
+
+ggplot(ToothGrowth,
+       aes(x = dose, y = len, colour = supp)
+) + geom_boxplot()
+
+ToothGrowth %>% mutate(dose = factor(dose)) %>% 
+  ggplot(aes(x = dose, y = len, colour = supp)) +
+  geom_boxplot()
+
+ggplot(ToothGrowth,
+       aes(x = factor(dose), y = len, colour = supp)
+) + geom_boxplot()
+
+
+ggplot(ToothGrowth,
+       aes(x = dose, y = len, colour = supp, group = dose)
+) + geom_boxplot()
+
+ggplot(ToothGrowth,
+       aes(x = dose, 
+           y = len, 
+           colour = supp, 
+           group = interaction(supp, dose))
+) + geom_boxplot()
+
+
+ggplot(ToothGrowth,
+       aes(x = dose, 
+           y = len, 
+           colour = supp, 
+           group = interaction(supp, dose))
+) + geom_boxplot() +
+  geom_jitter(position = position_jitterdodge(dodge.width = 1/3, 
+                                              jitter.width = 1/3 * 0.5), 
+              size = 0.85, 
+              alpha = 0.75)
+
+
+# scatterplot -------------------------------------------------------------
+
+ggplot(weight_df,
+       aes(x = height, y = weight)
+) + geom_point(size = 0.5)
+
+ggplot(weight_df,
+       aes(x = height, y = weight)
+) + geom_point(alpha = 0.5)
+
+# scatterplot, one per gender
+ggplot(weight_df,
+       aes(x = height, y = weight, colour = gender)
+) + geom_point(alpha = 0.5)
+
+ggplot(weight_df,
+       aes(x = height, y = weight, colour = gender)
+) + geom_point(alpha = 0.5) + geom_rug(size = 0.1)
+
+ggplot(weight_df,
+       aes(x = height, y = weight, colour = gender)
+) + geom_point(alpha = 0.5, size = 0.5) +
+  stat_smooth(method = 'lm', 
+              formula = y ~ x,
+              se = FALSE,
+              fullrange = TRUE)
+
+ggplot(weight_df,
+       aes(x = height, y = weight, colour = gender)
+) + geom_point(alpha = 0.5, size = 0.5) +
+  stat_smooth(method = 'lm', 
+              formula = y ~ poly(x,2),
+              se = FALSE,
+              fullrange = TRUE)
+
+ggplot(weight_df,
+       aes(x = height, y = weight, colour = gender)
+) + geom_point(alpha = 0.5, size = 0.5) +
+  stat_smooth(method = 'gam', 
+              formula = y ~ s(x, bs = 'cs'))
+
+ggplot(swiss,
+       aes(x = Examination, y = Fertility)
+) + geom_point() +
+  stat_smooth()
+
+
+sleep_df <- read_csv("https://raw.githubusercontent.com/mark-andrews/bas2021datascience/master/data/sleepstudy.csv")
+
+ggplot(sleep_df,
+       aes(x = Days, y = Reaction, colour = Subject)
+) + geom_point() +
+  stat_smooth(method = 'lm', se = FALSE)
+
+ggplot(sleep_df,
+       aes(x = Days, y = Reaction, group = Subject)
+) + geom_point() +
+  stat_smooth(method = 'lm', se = FALSE)
+
+ggplot(sleep_df,
+       aes(x = Days, y = Reaction, colour = Subject)
+) + geom_point() +
+  stat_smooth(method = 'lm', se = FALSE) +
+  facet_wrap(~Subject) +
+  theme_minimal()
