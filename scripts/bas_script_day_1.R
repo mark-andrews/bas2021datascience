@@ -363,8 +363,16 @@ recall_df_b <- read_csv("https://raw.githubusercontent.com/mark-andrews/bas2021d
 pivot_longer(recall_df_b,
              cols = -Subject,
              names_to = 'condition',
-             values_to = 'score')
+             values_to = 'score') %>% 
+  separate(condition, 
+           sep = '_',
+           into = c('cue', 'emotion'))
 
+pivot_longer(recall_df_b,
+             cols = -Subject,
+             names_to = c('cue', 'emotion'),
+             names_sep = '_')
+             
 
 # reading multiple csv files ----------------------------------------------
 # See the following blog post: https://www.mjandrews.org/blog/readmultifile/
