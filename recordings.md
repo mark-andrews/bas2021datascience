@@ -6,3 +6,7 @@ These are password protected, and you will have been given this password in the 
 * [Session 1: 8:30am to 10:30pm](https://vimeo.com/604684998)
 * [Session 2: 11:30am to 1:30pm](https://vimeo.com/604793713)
 * [Session 3: 2:30pm to 4:30pm](https://vimeo.com/604934047)
+
+# Day 2
+
+* [Session 1: 8:30am to 10:30pm](https://vimeo.com/606403603)
