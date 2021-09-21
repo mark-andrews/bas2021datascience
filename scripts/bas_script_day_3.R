@@ -153,3 +153,190 @@ if (write_to_file == TRUE){
 if (write_to_file == 'foobar'){
   write_csv(data_df, file = 'data_df_1.csv')
 }
+
+file_name_suffix <- 1
+
+if (file_name_suffix == 1){
+  write_csv(data_df, file = 'data_df_1.csv')
+} else {
+  write_csv(data_df, file = 'data_df_x.csv')
+}
+
+file_name_suffix <- 101
+
+x <- 42
+
+if (x) {
+  print('x is true')
+} else {
+  print('x is false')
+}
+  
+x <- 42
+if (x < 0){
+  print('x is less than 0')
+} else if (x > 0) {
+  print('x is greater 0')
+}
+
+
+x <- 0
+if (x < 0){
+  print('x is less than 0')
+} else if (x > 0) {
+  print('x is greater than 0')
+}
+
+x <- 0
+if (x < 0){
+  print('x is less than 0')
+} else if (x > 0) {
+  print('x is greater than 0')
+} else {
+  print('x is equal to 0')
+}
+
+x <- 0
+if (x < 0){
+  print('x is less than 0')
+} else {
+  if (x > 0) {
+    print('x is greater than 0')
+  } else {
+    print('x is equal to 0')
+  } 
+}
+  
+h <- function(x){
+  if (x < 0){
+    -1
+  } else if (x > 0){
+    1 
+  } else {
+    0
+  }
+}
+
+h(-10)
+h(-42)
+h(42)
+h(0)
+
+
+
+# for loops ---------------------------------------------------------------
+
+x <- seq(-5, 5)
+h(x)
+x
+h(x[1])
+h(x[2])
+h(x[3])
+# ...
+h(x[11])
+
+
+for (x_i in x){
+  print(h(x_i))
+}
+
+for (foo in x){
+  print(h(foo))
+}
+
+# iteration 1
+# x_i takes value x[1]
+# then we run 
+# print(h(x_i))
+# then
+# on iteration 2
+# x_i takes value x[2]
+# then we run 
+# print(h(x_i))
+
+
+for (i in 1:11){
+  print(h(x[i]))
+}
+for (i in 1:length(x)){
+  print(h(x[i]))
+}
+
+for (i in seq_along(x)){
+  print(h(x[i]))
+}
+k <- 2
+while (2^k < 1e6){
+  print(k)
+  k <- k + 1
+}
+
+k <- 2
+while (TRUE) {
+  
+  if (2^k > 1e6){
+    break
+  }
+  
+  print(k)
+  k <- k + 1
+}
+
+
+# functionals -------------------------------------------------------------
+
+y <- numeric(length(x))
+for (i in seq_along(x)){
+  y[i] <- h(x[i])
+}
+
+lapply(x, h) %>% unlist()
+lapply(x, h) %>% as.numeric()
+
+# this code here
+y <- vector('list', length(x))
+for (i in seq_along(x)){
+  y[[i]] <- h(x[i])
+}
+# is identical to this
+lapply(x, h)
+
+sapply(x, h)
+
+data_list <- list(x = c(1, 2, 3),
+                  y = c(NA, 2, 5),
+                  z = c(NA, 3, 10, 20)
+)
+
+lapply(data_list, mean)
+sapply(data_list, mean)
+
+mean(x, na.rm = TRUE)
+
+lapply(data_list, mean, na.rm = TRUE)
+sapply(data_list, mean, na.rm = TRUE)
+
+filenames <- list.files('exp_data', full.names = TRUE)
+
+# for each filename in the list of filenames
+#  do read_csv(filename) and save that as element of a list
+data_list <- lapply(filenames, read_csv)
+
+data_df <- bind_rows(data_list)
+dim(data_df)
+
+data_df_2 <- list.files('exp_data', full.names = TRUE) %>% 
+  lapply(read_csv) %>% 
+  bind_rows()
+
+all_equal(data_df_2, data_df)
+
+# do lapply using purrr:map
+data_list <- map(filenames, read_csv)
+
+
+map(x, h)
+map_dbl(x, h)
+
+data_df_3 <- map_dfr(filenames, read_csv)
+all_equal(data_df_2, data_df)
