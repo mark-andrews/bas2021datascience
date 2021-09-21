@@ -1,0 +1,71 @@
+---
+title: 'My First RMarkdown Document: Awesome'
+author: "Mark Andrews"
+date: "September 21, 2020"
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+bibliography: refs.bib
+---
+
+```{r, echo=FALSE}
+knitr::opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE)
+```
+
+```{r}
+# load tidyverse as per usual
+library(tidyverse)
+library(knitr)
+```
+
+
+# Exploratory analysis
+
+```{r, echo = FALSE}
+kable(head(ToothGrowth))
+```
+
+```{r}
+ggplot(ToothGrowth,
+       aes(x = dose, y = len, colour = supp, 
+           group = interaction(supp, dose)
+       )
+) + geom_boxplot() + theme_classic()
+```
+
+# Linear model analysis
+
+<!-- Here is a note to self...... 
+
+everything until the closing tag is commented ...
+
+-->
+
+```{r, echo = TRUE}
+M <- lm(len ~ dose * supp, data = ToothGrowth)
+```
+
+## Results
+
+Here is the table of linear regression coefficients:
+```{r}
+S <- summary(M)
+kable(S$coefficients, digits = 2)
+```
+
+The $R^2$ value of the linear model is `r round(S$r.squared, 2)`.
+Or put another way,
+$$
+R^2 = `r round(S$r.squared, 2)`.
+$$
+
+
+
+As was shown by @polarbear1995 ....
+
+
+# References
