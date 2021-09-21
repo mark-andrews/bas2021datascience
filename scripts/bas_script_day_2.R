@@ -358,3 +358,52 @@ ggplot(gistemp_1700_df,
 ) + geom_raster() +
   scale_fill_gradient2(low = 'blue', high = 'red') +
   coord_quickmap()
+
+# this works
+tidync(gistempfile) %>% 
+  hyper_filter(time = index == 1700)
+
+# but this does not work
+tidync(gistempfile) %>% 
+  hyper_filter(time = index %in% c(10, 100, 1000, 1700))
+
+tidync(gistempfile) %>% 
+  hyper_tibble()
+
+f <- ncdf4::nc_open(gistempfile)
+time_index <- ncdf4::ncvar_get(f, 'time')
+time_index[c(10, 100, 1000, 1700)]
+
+nc_df <- tidync(gistempfile) %>% 
+  hyper_tibble() %>% 
+  filter(time %in% time_index[c(10, 100, 1000, 1700)]) %>% 
+  mutate(date = ymd('1800-01-01') + time)
+
+nc_df
+
+# ggplot(mapping = aes(x = lon, y = lat, fill = tempanomaly),
+#        data = nc_df)
+
+ggplot(nc_df,
+       aes(x = lon, y = lat, fill = tempanomaly)
+) + geom_raster() +
+  scale_fill_gradient2(low = 'blue', high = 'red') +
+  coord_quickmap() +
+  facet_wrap(~date) +
+  theme_minimal()
+
+
+
+world_df <- map_data('world')
+
+ggplot() +  
+  geom_raster(mapping = aes(x = lon, y = lat, fill = tempanomaly),
+              inherit.aes = F,
+              data = data_t1700_df) +
+  scale_fill_gradient2(low = 'blue', high = 'red') +
+  geom_polygon(
+    data = world_df,
+    mapping = aes(x = long, y = lat, group = group),
+    fill = 'white', colour = 'grey50', alpha = 0.0) +
+  coord_quickmap() +
+  theme_classic()
