@@ -1,0 +1,1362 @@
+---
+title: "General & Generalized Linear Models"
+author: Mark Andrews
+fontsize: 10pt
+output:
+ beamer_presentation:
+  keep_tex: true
+  fonttheme: "serif"
+  includes:
+   in_header: preamble.tex
+---
+
+
+```{r, echo=F}
+knitr::opts_chunk$set(echo = F, prompt = F, warning = F, message = F, comment='#>')
+# Thanks to 
+# https://github.com/ramnathv/slidify/issues/189#issuecomment-15850008
+hook1 <- function(x){ gsub("```\n*```r*\n*", "", x) }
+hook2 <- function(x){ gsub("```\n+```\n", "", x) }
+knitr::knit_hooks$set(document = hook1)
+```
+
+```{r}
+library(tidyverse)
+library(here)
+library(knitr)
+theme_set(theme_classic())
+
+set.seed(10101)
+```
+
+# Regression models
+
+```{r, out.width='0.67\\textwidth', fig.align='center'}
+n <- 10
+tibble(x = rnorm(n), 
+       y = x + rnorm(n)) %>% 
+  ggplot(aes(x = x, y = y)) + geom_point() + stat_smooth(method = 'lm', se = F)
+```
+
+* Regression models are often introduced as fitting lines to points.
+* This is a limited perspective that makes understanding more complex regression models, like generalized linear models, harder to grasp.
+
+
+# Regression models
+
+* Put simply and generally, a regression model is a model of how the probability distribution of one variable, known as the *outcome* variable and other names, varies as a function of other variables, known as the *explanatory* or *predictor* variables.
+
+* The most common or basic type of regression models is the *normal* *linear* model.
+
+* In normal linear models, we assume that the outcome variable is normally distributed and that its mean varies linearly with changes in a set of predictor variables.
+
+* By understanding the normal linear model thoroughly, we can see how it can be extended to deal with data and problems beyond those that it is designed for.
+
+# Normal linear models
+
+* In a normal linear model, we have $n$ observations of an outcome variable:
+$$
+y_1, y_2 \ldots y_i \ldots y_n,
+$$
+and for each $y_i$, we have a set of $K \geq 0$ explantory variables:
+$$
+\vec{x}_1, \vec{x}_2 \ldots \vec{x}_i \ldots \vec{x}_n,
+$$
+where $\vec{x}_i = [x_{1i}, x_{2i} \ldots x_{ki} \ldots x_{Ki}]\strut^\intercal$.
+
+* We model $y_1, y_2 \ldots y_i \ldots y_n$ as observed values of the random variables $Y_1, Y_2 \ldots Y_i \ldots Y_n$.
+
+* Each $Y_i$, being a random variable, is defined by a probability distribution, which we model as conditionally dependent on $\vec{x}_i$.
+
+* In notation, for convenience, we often blur the distinction between an (ordinary) variable indicating an observed value and, e.g. $y_i$, and its corresponding random variable $Y_i$. 
+
+# Normal linear models
+
+* In normal linear models, we model $y_1, y_2 \ldots y_i \ldots y_n$ as follows:
+$$
+\begin{aligned}
+y_i &\sim N(\mu_i, \sigma^2),\quad\text{for $i \in 1 \ldots n$},\\
+\mu_i &= \beta_0 + \sum_{k=1}^K \beta_k x_{ki}
+\end{aligned}
+$$
+
+* In words, each $y_i$ is modelled a normal distribution, of equal variance $\sigma^2$, whose mean is a linear function of $\vec{x}_i$.
+
+* From this model, for every hypothetically possible value of the $K$ predictor variables, i.e. $\vec{x}_{i^\prime}$, there is a corresponding mean $\mu_{i^\prime}$, i.e. $\mu_{i^\prime} = \beta_0 + \sum_{k=1}^K \beta_k x_{ki^\prime}$.
+
+* If we change $x_{ki^\prime}$ by $\Delta_k$, then $\mu_{i^\prime}$ changes by $\beta_k \Delta_k$.
+
+# Examples
+
+```{r, echo = T}
+weight_df <- read_csv(here('data/weight.csv'))
+weight_male_df <- weight_df %>% filter(gender == 'Male')
+
+M_1 <- lm(weight ~ height, data = weight_male_df)
+
+M_2 <- lm(weight ~ height + age, data = weight_male_df)
+
+```
+
+# Categorical predictors
+
+* To handle categorical predictors, we use binary re-coding of the values of the categorical predictor.
+
+* In the simplest case of a dichomtomous categorical variables, e.g. $\text{gender} \in \{\text{female}, \text{male}\}$, we can recode gender as $\text{female} = 0$, $\text{male} = 1$.
+
+* With $L > 2$ values, we can use a $L - 1$ *dummy* code, e.g.
+```{r}
+tribble(~race, ~x1, ~x2,
+        'black', 0, 0,
+        'white', 0, 1,
+        'hispanic', 1, 0) %>% 
+  kable()
+```
+
+* We call linear normal models with categorical predictors *general linear models*^[But this term is used in other, though related, ways too.]
+
+
+# Examples
+
+```{r, echo = T}
+M_3 <- lm(weight ~ height + gender, data = weight_df)
+
+M_3 <- lm(weight ~ height + race, data = weight_male_df)
+
+```
+
+
+# Nested model comparison
+
+* Model $M_0$ is nested in model $M_1$ if the parameter space of $M_0$ is a subset of the parameter space of $M_1$.
+* For example, if $M_0$ is the following linear model:
+$$
+\text{for $i \in 1\ldots n,$} \quad y_i = \beta_0 + \beta_1 x_{1i} + \epsilon_i,\quad \epsilon_i \sim N(0, \sigma^2),
+$$
+its parameter space is $\beta_0$, $\beta_1$, $\sigma^2$.
+* If $M_1$ is the following linear model:
+$$
+\text{for $i \in 1\ldots n,$} \quad y_i = \beta_0 + \beta_1 x_{1i} + \beta_2 x_{2i} + \epsilon_i,\quad \epsilon_i \sim N(0, \sigma^2),
+$$
+its parameter space is $\beta_0$, $\beta_1$, $\beta_2$, $\sigma^2$.
+* Any set of values of  $\beta_0$, $\beta_1$, $\sigma^2$ in $M_0$ is a point in the parameter space of $\beta_0$, $\beta_1$, $\beta_2$, $\sigma^2$ of $M_1$ if we simply set $\beta_2 = 0$.
+* In other words, we can make $M_0$ with any given values of $\beta_0$, $\beta_1$, $\sigma^2$ from $M_1$ by setting $\beta_0$, $\beta_1$, $\sigma^2$ in $M_1$ to these same values and setting $\beta_2 = 0$.
+
+# Nested normal linear models
+
+* We can compare nested normal linear models using F tests.
+* Assume $M_0$ and $M_1$ are normal linear models, with $M_0$ nested in $M_1$.
+* We calculate $\text{RSS}_0$ and $\text{RSS}_1$, the residual sums of squares of $M_0$ and $M_1$, respectively.
+* $\text{RSS}_0$ will be greater than or equal to $\text{RSS}_1$.
+* Then
+$$
+\begin{aligned}
+\text{proportional increase in error}&= \frac{\text{increase in error}}{\text{minimal error}} ,\\
+\\
+&= \frac{\text{RSS}_0 - \text{RSS}_1}{\text{RSS}_1},
+\end{aligned}
+$$
+
+# Residual sum of squares
+
+* The sum of squared residuals in a normal linear model is 
+$$
+\text{RSS} = \sum_{i=1}^n |y_i - (\beta_0 + \sum_{k=1}^K \beta_k x_{ki})|^2.
+$$
+* The RSS when using the maximum likelihood estimators is 
+$$
+\begin{aligned}
+\text{RSS} &= \sum_{i=1}^n |y_i - (\beta_0 + \sum_{k=1}^K \beta_k x_{ki})|^2,\\
+           &= \sum_{i=1}^n |y_i - \hat{y}_i|^2
+\end{aligned}
+$$
+
+# Nested normal linear models
+
+```{r, echo=T}
+M1 <- lm(Fertility ~ Agriculture + Education + Catholic, data = swiss)
+M0 <- lm(Fertility ~ Agriculture + Education, data = swiss)
+
+RSS_0 <- sum(residuals(M0)^2)
+RSS_1 <- sum(residuals(M1)^2)
+
+c(RSS_0, RSS_1)
+```
+
+```{r, echo=T}
+(RSS_0 - RSS_1)/RSS_1
+```
+
+In other words, $\text{RSS}_0$ is `r round(1 + ((RSS_0 - RSS_1)/RSS_1), 2)` greater than $\text{RSS}_1$.
+
+# Nested normal linear models
+
+* The F ratio is 
+$$
+\begin{aligned}
+F &= \underbrace{\frac{\text{RSS}_0 - \text{RSS}_1}{\text{RSS}_1}}_{\text{effect size}} \times \underbrace{\frac{\text{df}_1}{\text{df}_0 - \text{df}_1}}_{\text{sample size}}
+  &= \frac{(\text{RSS}_0 - \text{RSS}_1)/(\text{df}_0 - \text{df}_1)}{\text{RSS}_1/\text{df}_1}.
+\end{aligned}
+$$
+where $\text{df}_1$ is $N - (K_1 + 1)$, where $K_1$ is number of (predictor; excluding intercept) coefficients in $M_1$.
+
+```{r, echo=T}
+df_0 <- M0$df.residual
+df_1 <- M1$df.residual
+c(df_0, df_1, df_0 - df_1, df_1/(df_0 - df_1))
+```
+
+
+# Nested normal linear models
+
+```{r, echo=T}
+RSS_0
+RSS_1
+RSS_0 - RSS_1
+df_0 - df_1
+df_1
+(RSS_0 - RSS_1)/(df_0 - df_1)
+RSS_1/df_1
+((RSS_0 - RSS_1)/(df_0 - df_1))/(RSS_1/df_1)
+```
+
+# Nested normal linear models
+
+```{r, echo=T}
+anova(M0, M1)
+```
+
+# Nested normal linear models
+
+```{r, echo=T}
+drop1(M1, scope = ~ Catholic, test = 'F')
+```
+
+# Nested normal linear models
+
+```{r, echo=T}
+drop1(M0, scope = ~ Education, test = 'F')
+```
+
+# Nested normal linear models
+
+```{r, echo=T}
+drop1(M0, scope = ~ Education + Agriculture, test = 'F')
+```
+
+# $R^2$
+
+- If we have two models, $M_0$ and $M_1$, with $M_0$ nested in $M_1$, and with residual sums of squares $\text{RSS}_0$ and $\text{RSS}_1$, respectively, we can calculate:
+$$
+\begin{aligned}
+\text{proportional decrease in error}&= \frac{\text{decrease in error (from $M_0$ to $M_1$)}}{\text{error in $M_0$}} ,\\
+\\
+&= \frac{\text{RSS}_0 - \text{RSS}_1}{\text{RSS}_0},\\
+& = R^2
+\end{aligned}
+$$
+
+```{r, echo=T}
+(RSS_0 - RSS_1) / RSS_0
+```
+
+* In other words, the reduction in error from $M_0$ to $M_1$ is `r round((RSS_0 - RSS_1) / RSS_0, 2)` of the error of $M_0$. 
+
+
+# $R^2$: The coefficient of determination
+
+-   It can be shown that
+    $$\underbrace{\sum_{i=1}^n (y_i-\bar{y})^2}_{\text{TSS}} = \underbrace{\sum_{i=1}^n (\hat{y}_i - \bar{y})^2}_{\text{ESS}} + \underbrace{\sum_{i=1}^n (y_i - \hat{y}_i)^2}_{\text{RSS}},$$
+    where TSS is *total* sum of squares, ESS is *explained* sum of
+    squares, and RSS is *residual* sum of squares.
+
+-   The coefficient of determination $R^2$ is defined as
+    $$\begin{aligned}
+    R^2 = \frac{\text{\footnotesize ESS}}{\text{\footnotesize TSS}} &= \text{\footnotesize Proportion of variation that is explained},\\
+    &= 1 - \frac{\sum_{i=1}^n (y_i - \hat{y}_i)^2 }{\sum_{i=1}^n (y_i-\bar{y})^2 }\end{aligned}$$
+
+
+# $R^2$
+
+- If $M_0$ is a *null* model, i.e. no predictors, then $\text{TSS}$ = $\text{RSS}_0$.
+-   It can be shown that
+    $$\underbrace{\sum_{i=1}^n (y_i-\bar{y})^2}_{\text{RSS}_0} = \underbrace{\sum_{i=1}^n (\hat{y}_i - \bar{y})^2}_{\text{RSS}_0 - \text{RSS}_1} + \underbrace{\sum_{i=1}^n (y_i - \hat{y}_i)^2}_{\text{RSS}_1}.$$
+
+-   As such, $R^2$ is defined as
+    $$\begin{aligned}
+    R^2 = \frac{\text{RSS}_0-\text{RSS}_1}{\text{RSS}_0} = 1 - \frac{\text{RSS}_1}{\text{RSS}_0}
+    \end{aligned},$$
+    or 1 minus the error of $M_1$ relative to $M_0$.
+
+# $R^2$
+
+```{r, echo=T}
+M_null <- lm(Fertility ~ 1, data = swiss)
+RSS_null <- sum(residuals(M_null)^2)
+RSS_0 / RSS_null
+1 - RSS_0 / RSS_null
+(RSS_null - RSS_0) / RSS_null
+summary(M0)$r.squared
+```
+
+
+# Adjusted $R^2$
+
+-   By explaining proportion of variance explained, $R^2$ is used a
+    *goodness of fit* measure.
+
+-   However, $R^2$ will always grow with $K$, the number of predictors.
+
+-   $R^2$ can be *adjusted* to counteract the artificial effect of
+    increasing numbers of predictors as follows:
+    $$%R^2_{\text{Adj}} = 1 - (1-R^2) \frac{n-1}{n-K-1}
+    R^2_{\text{Adj}}  = \underbrace{1-\frac{\text{RSS}}{\text{TSS}}}_{R^2}\underbrace{\frac{n-1}{n-K-1}}_{\text{penalty}},$$
+    where $n$ is sample size.
+
+-   $R^2_{\text{Adj}}$ is not identical to the proportion of
+    variance explained in the *sample*, but is an unbiased measured of the population $R^2$.
+
+
+# Adjusted $R^2$
+
+```{r, echo=T}
+n <- nrow(M0$model)
+K <- length(coef(M0)) - 1 # no. of predictor coefs
+penalty <- (n - 1)/(n - K - 1)
+1 - (RSS_0 / RSS_null) * penalty
+summary(M0)$adj.r.squared
+```
+
+
+
+
+
+# The problem of binary outcome data 
+
+* What if our outcome variable is binary, e.g., 
+$$
+y_1, y_2 \ldots y_i\ldots y_n,
+$$
+with $y_i \in \{0, 1\}$?
+
+* Modelling $y_1, y_2 \ldots y_n$ 
+  as samples from a normal distribution is an extreme example of *model misspecifcation*.
+
+* Instead, we should use a more appropriate model.
+
+* The easiest way to do this is to use an extension of the normal linear model.
+
+# Logistic regression's assumed model 
+
+- For all $i \in 1 \ldots n$,
+    $$
+    \begin{aligned}
+    y_i &\sim \mathrm{Bernoulli}(\theta_i),\\
+    \mathrm{logit}(\theta_i) &=  \beta_0 + \sum_{k=1}^K \beta_k x_{ki},
+    \end{aligned}
+    $$
+    where 
+    $$
+    \mathrm{logit}(\theta_i) \doteq \log\left(\frac{\theta_i}{1-\theta_i}\right).
+    $$
+- In other word, we are saying that each observed outcome variable value $y_1, y_2 \ldots y_n$ 
+  is a sample from a *Bernoulli* distribution with parameter $\theta_i$, 
+  and the log odds of $\theta_i$ is a *linear* function of the $\vec{x}_i$.
+
+
+# Odds
+
+-   Consider a coin toss. If the probability of Heads is $p$, then the
+    probability of Tails is $1-p$.
+
+-   The odds of the coin coming up Heads on a single toss
+    are given by
+    $$\frac{p}{1-p}.$$
+-   The odds simply gives the ratio of the probability of Heads to the
+    probability of Tails.
+
+
+
+# Log odds (or logit)
+
+-   The log odds, or logit, is simply the logarithm of the odds.
+
+```{r}
+
+logit <- function(p) log(p/(1-p))
+
+tibble(x = seq(0, 1, length.out = 1000),
+       y = logit(x)) %>% 
+  ggplot(aes(x = x, y = y)) + geom_line() +
+  xlab('Probability') + 
+  ylab('Log odds')
+
+```
+
+# Logit transform of a uniform distribution over $(0, 1)$
+
+```{r}
+N <- 25000
+tibble(x = runif(N),
+       y = logit(x)) %>% 
+  ggplot(aes(x=y)) + geom_histogram(bins=50, col='white')
+```
+
+# The inverse logit transformation (ilogit)
+
+- Just as we can map a probability to a log odds with the logit transformation, 
+  we can map a log odds back to a probability with the inverse logit, or ilogit, transformation:
+```{r}
+ilogit <- function(x) 1/(1 + exp(-x))
+tibble(x = seq(-5, 5, length.out = 100),
+       y = ilogit(x)) %>% 
+  ggplot(aes(x = x, y = y)) + geom_line() +
+  ylab('Probability') + 
+  xlab('Log odds')
+
+```
+  
+# Equivalent definitions of the binary logistic regression
+
+- For all $i \in 1 \ldots n$,
+    $$
+    \begin{aligned}
+    y_i &\sim \mathrm{Bernoulli}(\theta_i),\\
+    \mathrm{logit}(\theta_i) &=  \beta_0 + \sum_{k=1}^K \beta_k x_{ki}. 
+    \end{aligned}
+    $$
+- This is equivalent to
+    $$
+    \begin{aligned}
+    y_i &\sim \mathrm{Bernoulli}(\theta_i),\\
+    \theta_i &=  \mathrm{ilogit}\left( \beta_0 + \sum_{k=1}^K \beta_k x_{ki}\right),
+    \end{aligned}
+    $$
+    where
+    $$
+    \mathrm{ilogit}(x) \triangleq \frac{1}{1 + e^{-x}}.
+    $$
+    
+# From probabilities to odds to logits, and back
+
+\tikzset{
+    %Define standard arrow tip
+    >=stealth',
+    %Define style for boxes
+    punkt/.style={
+           rectangle,
+           rounded corners,
+           draw=black, very thick,
+           text width=10em,
+           minimum height=2em,
+           text centered},
+    % Define arrow style
+    pil/.style={
+           ->,
+           thick,
+           shorten <=2pt,
+           shorten >=2pt},
+    mstyle/.style={ row sep=2cm,nodes={state}}
+}
+
+  
+
+\begin{tikzpicture}[node distance=0.7cm, auto,]
+  \matrix(m)[matrix of nodes,ampersand replacement=\&,mstyle]{
+     \& \node[punkt] (probability) {Probability: $\theta$}; \&   \\
+      \&  \&   \\
+    \node[punkt, inner sep=5pt] (odds) {Odds: $\frac{\theta}{1-\theta}$}; \&  \&  \node[punkt, inner sep=5pt] (logit) {Logit: $\log\left(\frac{\theta}{1-\theta}\right)$}; \\
+  };
+
+   \path[pil]
+    (probability) edge[bend right=15] node [left, above, sloped] {$\tfrac{\theta}{1-\theta}$} (odds)
+    (odds)  edge[bend right=15] node [below] {$\log(\text{odds})$} (logit)
+    (logit) edge[bend right=15] node [right, above, sloped] {$\frac{1}{1+e^{-\text{logit}}}$} (probability)
+    (probability) edge[bend right=15] node [left, below, sloped] {$\log\left(\tfrac{\theta}{1-\theta}\right)$} (logit)
+    (logit) edge[bend right=15] node [above] {$e^{\text{logit}}$} (odds)
+    (odds)  edge[bend right=15] node [right, below, sloped] {$\tfrac{\text{odds}}{1+\text{odds}}$} (probability);
+    
+\end{tikzpicture}
+
+# Examples
+
+```{r, results='hide', echo=T}
+affairs_df <- read_csv(here('data/affairs.csv')) %>% 
+  mutate(cheater = affairs > 0)
+
+M <- glm(cheater ~ yearsmarried, 
+         family = binomial(link = 'logit'),
+         data = affairs_df)
+```
+
+
+# Understanding $\beta$ coefficients
+
+-   In linear models, a coefficient for a predictor variable has a
+    straightforward interpretation: 1 unit change for a predictor
+    variable corresponds to $\beta$ change in the outcome variable.
+
+-   As logistic regression curves are nonlinear, the change in the
+    outcome variable is not a constant function of change in the
+    predictor.
+
+-   This makes interpretation more challenging.
+
+-   The most common means to interpret $\beta$ coefficients is in terms
+    of odds ratios.
+
+# Odds ratios
+
+-   We have seen that an odds in favour of an event are $\frac{p}{1-p}$.
+
+-   We can compare two odds with an odds ratio.
+
+-   For example, the odds of getting a certain job for someone with a
+    MBA might be $\frac{p}{1-p}$, while the odds of getting the same job
+    for someone without an MBA might be $\frac{q}{1-q}$.
+
+-   The ratio of the odds for the MBA to those of the non-MBA are
+    $$\frac{p}{1-p} \Big/ \frac{q}{1-q}$$
+
+-   This gives the factor by which odds for the job change for someone
+    who gains an MBA.
+
+# $\beta$ coefficients as (log) odds ratios
+
+-   Consider a logistic regression model with a single dichotomous
+    predictor, i.e.
+    $$\log\left(\frac{\Prob{y_i=1}}{1-\Prob{y_i=1}}\right) = \alpha + \beta x_i,$$ where
+    $x_i \in \{0,1\}$.
+
+-   The log odds that $y_i = 1$ when $x_i=1$ is $\alpha + \beta$.
+
+-   The log odds that $y_i = 1$ when $x_i=0$ is $\alpha$.
+
+-   The log odds that $y_i = 1$ when $x_i=1$ minus the log odds that
+    $y_i = 1$ when $x_i=0$ is $$(\alpha + \beta) - \alpha = \beta.$$
+
+# $\beta$ coefficients as (log) odds ratios
+
+-   Let's denote the probability that $y_i=1$ when $x_i=1$ by $p$, and
+    denote the probability that $y_i=1$ when $x_i=0$ by $q$.
+
+-   Subtracting the log odds is the log of the odds ratio, i.e.
+    $$\log\left(\frac{p}{1-p}\right) - \log\left(\frac{q}{1-q}\right) = \log \left( \frac{p}{1-p} \big/ \frac{q}{1-q} \right) = \beta$$
+
+-   As such, $$e^{\beta} =  \frac{p}{1-p} \big/ \frac{q}{1-q}.$$
+
+-   This provides a general interpretation for the $\beta$ coefficients.
+
+# Prediction in logistic regression
+
+- Given inferred values for $\beta_0, \beta_1 \ldots \beta_K$, the 
+  predicted log odds of the outcome variable given $\vec{x}_i$ is
+  $$
+  \beta_0 + \sum_{k=1}^K \beta_k x_{ki}
+  $$
+- Knowing the predicted log odds, the predicted probability or predicted odds is easily calculated:
+  $$
+  \textrm{ilogit}\left(\beta_0 + \sum_{k=1}^K \beta_k x_{ki}\right).
+  $$
+  
+# Examples
+
+```{r, results = 'hide', echo=T}
+affairs_df_new <- tibble(yearsmarried = c(1, 5, 10, 20, 25))
+
+library(modelr)
+
+# predicted log odds
+affairs_df_new %>% 
+  add_predictions(M)
+
+# predicted probabilities
+affairs_df_new %>% 
+  add_predictions(M, type = 'response')
+```
+
+
+# Model Fit with Deviance
+
+-   Once we have the estimates of the parameters, we
+    can calculate *goodness of fit*.
+
+-   The *deviance* of a model is defined
+    $$-2 \log  L(\hat{\beta}\given\mathcal{D}) ,$$ where
+    $\hat{\beta}$ are the maximum likelihood estimates.
+
+-   This is a counterpart to $R^2$ for generalized linear models.
+
+# Model Fit with Deviance: Model testing
+
+-   In a model with $K$ predictors ($\mathcal{M}_1$), a comparison "null" model ($\mathcal{M}_0$) could be a model with a subset $K^\prime < K$ of these predictors.
+
+-   The difference in the deviance of the null model minus the deviance
+    of the full model is
+    $$\Delta_{D} = D_0 - D_1 = -2 \log  \frac{L(\hat{\beta}_0\given\mathcal{D})}{L(\hat{\beta}_1\given\mathcal{D})},$$
+    where $\hat{\beta}_1$ and $\hat{\beta}_0$ are the maximum likelihood estimators of the models $\mathcal{M}_1$ and $\mathcal{M}_0$, respectively.
+
+-   Under the null hypothesis, $\Delta_D$ is distributed as $\chi^2$
+    with $K - K^\prime$ degrees of freedom.
+
+-   In other words, under the null hypothesis that subset and full
+    models are identical, the difference in the deviances will be
+    distributed as a $\chi^2$ with df equal to the difference in the
+    number of parameters between the two models.
+    
+# Example
+
+```{r, echo = T, results = 'hide'}
+M_1 <- glm(cheater ~ yearsmarried + age + gender, 
+           family = binomial(link = 'logit'),
+           data = affairs_df)
+
+# The "null" model
+M_0 <- glm(cheater ~ yearsmarried, 
+           family = binomial(link = 'logit'),
+           data = affairs_df)
+
+anova(M_0, M, test = 'Chisq')
+```
+
+# Ordinal outcome variables
+
+* Ordinal variables have values that can be ordered but these values are not in a metric space.
+* For example, "very unsatisfied", "unsatisfied", "neutral", "satisfied" and "very satisfied" are ordinal values. The "distance" between "very unsatisfied" and "unsatisfied" is not necessarily the same as the "distance" between "satisfied" and "very satisfied".
+* We can model ordinal data using an extension of the binary logistic regression model.
+* To understand this, we must understand the latent variable formulation of binary logistic regression.
+
+
+
+# Latent variable formulation of binary logistic regression
+
+- We may describe a logistic regression exactly using the following latent variable formulation.
+- For all $i \in 1 \ldots n$,
+    $$
+    \begin{aligned}
+    y_i &= \begin{cases}
+    1, \quad \text{if $z_i \geq 0$} \\
+    0, \quad \text{if $z_i < 0$}
+    \end{cases},\\
+    z_i &\sim  \textrm{dlogis}(\beta_0 + \sum_{k=1}^K \beta_k x_{ki}),
+    \end{aligned}
+    $$
+    where $\textrm{dlogis}$ is a *logistic distribution*.
+    
+# Standard logistic distribution
+
+```{r, out.width="0.75\\textwidth", fig.align="center"}
+tibble(x = seq(-10, 10, length.out = 10000),
+       y = dlogis(x)) %>% 
+  ggplot(aes(x = x, y = y)) + geom_line()
+```
+
+* The standard logistic distribution has a mean of 0 and scale parameter of 1.
+
+    
+# Logistic distribution with of 1.25
+
+```{r, out.width="0.75\\textwidth", fig.align="center"}
+df_1 <- tibble(x = seq(-10, 10, length.out = 10000),
+               y = dlogis(x, location = 1.25)) 
+df_2 <- tibble(x = seq(-10, 0, length.out = 10000),
+               y = dlogis(x, location = 1.25)) 
+
+df_3 <- bind_rows(c(x = -10, y= 0),
+          df_2)
+
+ggplot(data = df_1, aes(x = x, y = y)) + geom_line() +
+  geom_polygon(data = rbind(c(0,0), subset(df_1, x > 0)), aes(x = x, y=y), fill = 'grey') +
+  geom_polygon(data = rbind(c(0,0), subset(df_1, x < 0)), aes(x = x, y=y), fill = 'grey61')
+```
+* Here, we shade the area above and below 0.
+
+# Latent variable formulation for ordinal logistic regression
+
+- Let us assume that each $y_i \in \{0, 1, 2\}$ (or any other ordered values).
+- We introduce two *cutpoints*: $\zeta_1$ and $\zeta_2$.
+- Then our *cumulative logit* model is: for all $i \in 1 \ldots n$,
+    $$
+    \begin{aligned}
+    y_i &= \begin{cases}
+    2, \quad \text{if $z_i \geq \zeta_2$} \\
+    1, \quad \text{if $\zeta_1 \leq z_i < \zeta_2$} \\
+    0, \quad \text{if $z_i < \zeta_1$}
+    \end{cases},\\
+    z_i &\sim  \textrm{dlogis}(\sum_{k=1}^K \beta_k x_{ki}).
+    \end{aligned}
+    $$
+- In general, for $L$ ordered values, we have $L-1$ cutpoints, which defines $L$ regions under the logistic distribution.
+$$
+-\infty < \zeta_1 < \zeta_2 < \ldots < \zeta_{L-1} < \infty
+$$
+
+# Example 
+
+```{r, echo=T, results='hide'}
+library(pscl)
+library(MASS)
+M <- polr(score ~ gre.quant, data=admit)
+
+admit_df_new <- tibble(gre.quant = c(600, 700, 800))
+add_predictions(admit_df_new, M, type = 'probs')
+
+# compare to
+plogis(q = M$zeta, location = M$coefficients * 600)
+
+
+```
+
+# Categorical logistic regression
+
+* If each $y_i \in \{1, 2 \ldots L\}$, where these $L$ values are treated as categorically distinct, then we model $y_i$ as follows.
+$$
+\log\left(\frac{\Prob{y_i = l}}{\Prob{y_i = 1}}\right) =  \beta_{l0} + \sum_{k=1}^K \beta_{lk} x_{ki},\quad \text{for $l \in \{2 \ldots L\}$ },
+$$
+and 
+$$
+\log\left(\frac{\Prob{y_i = 1}}{\Prob{y_i = 1}}\right) =  0.
+$$
+* This is equivalent to 
+$$
+\Prob{y_i = l} = \frac{e^{z_{li}}}{1 + \sum_{l=2}^L e^{z_{li}}},
+$$
+where
+$$
+z_{li} = \beta_{l0} + \sum_{k=1}^K \beta_{lk} x_{ki}.
+$$
+
+# Examples 
+
+```{r, echo=T, results='hide'}
+library(nnet)
+M <- multinom(score ~ gre.quant, data=admit)
+
+
+add_predictions(admit_df_new, M, type = 'probs')
+
+# Compare to
+z <- coef(M) %*% c(1, 600)
+c(1, exp(z)) / sum(c(1, exp(z)))
+```
+
+
+```{r}
+library(tidyverse)
+library(here)
+library(knitr)
+library(cowplot)
+library(modelr)
+library(pscl)
+library(MASS)
+theme_set(theme_classic())
+
+set.seed(10101)
+
+biochemists_Df <- read_csv(here('data/biochemist.csv'))
+
+theme_set(theme_classic())
+
+set.seed(10101)
+
+data("bioChemists")
+publications <- bioChemists$art
+
+
+```
+
+# The Poisson Distribution
+
+-   The Poisson distribution is a discrete probability distribution over
+    the non-negative integers $0,1,2 \ldots$.
+
+```{r, out.width='0.75\\textwidth', fig.align='center'}
+lambda <- 3.5
+tibble(x = seq(0, 25),
+       y = dpois(x, lambda = lambda)
+) %>% ggplot(aes(x = x, y = y)) +
+  geom_point() +
+  geom_segment(aes(x = x, xend = x, y = 0, yend = y), color = "grey50") +
+  ylab('P(x)')
+```
+Shown here is a Poisson distribution with $\lambda = `r lambda`$.
+
+# The Poisson Distribution
+
+-   The Poisson distribution is used to model the probability of a given
+    number of events occurring in a fixed interval of time, e.g. the
+    number of emails you get per hour, the number of shark attacks on
+    Bondi beach every summer, etc.
+
+-   It has a single parameter $\lambda$, known as the *rate*.
+
+-   If $x$ is a Poisson random variable whose, its probability mass
+    function is
+    $$\Prob{x=k\given \lambda} = \frac{e^{-\lambda}\lambda^k}{k!}.$$
+
+# The Poisson Distribution
+
+-   The mean of a Poisson distribution is equal to its rate parameter
+    $\lambda$.
+
+-   Its variance is also equal to $\lambda$.
+
+```{r, out.width='0.75\\textwidth', fig.align='center'}
+lambda_0 <- 3.5
+lambda_1 <- 5.0
+lambda_2 <- 10.0
+lambda_3 <- 15.0
+tibble(x = seq(0, 25),
+       y_0 = dpois(x, lambda = lambda_0),
+       y_1 = dpois(x, lambda = lambda_1),
+       y_2 = dpois(x, lambda = lambda_2),
+       y_3 = dpois(x, lambda = lambda_3)
+) %>% gather(lambda, density, -x) %>% 
+  ggplot(aes(x = x, y = density, col = lambda)) +
+  geom_line() + 
+  geom_point() +
+  ylab('P(x)') +
+  guides(col = FALSE)
+```
+As $\lambda$ increases, so too does the variance.
+
+
+# The Poisson Distribution
+
+-   The Poisson distribution can be seen as the limit of a Binomial
+    distribution as $N \to \infty$, and $\lambda = p N$.
+
+
+-   Shown are (left) $\text{Binomial}(N,p=\lambda/N)$ where
+    $N\approx10^3$ and $\lambda=7.5$, and (right) $\text{Poisson}(\lambda)$.
+
+```{r, out.width='0.8\\textwidth', fig.align='center'}
+lambda <- 7.5
+N <- 10^3
+
+Df <- tibble(x = seq(0, 25),
+             y_bin = dbinom(x, size = N, prob = lambda/N),
+             y_pois = dpois(x, lambda = lambda)
+)
+
+p1 <- ggplot(Df, aes(x = x, y_bin)) + geom_line() + geom_point() + ylab('P(x)') + guides(col = FALSE)
+p2 <- ggplot(Df, aes(x = x, y_pois)) + geom_line() + geom_point() + ylab('P(x)') + guides(col = FALSE)
+
+
+plot_grid(p1, p2, labels = c("A", "B"))
+
+
+```
+
+# Poisson Regression
+
+-   In any regression problem, our data are
+    $(y_1,x_1), (y_2,x_2) \ldots (y_n,x_n)$, where each $y_i$ is
+    modelled as a stochastic function of $x_i$.
+
+-   In Poisson regression, we assume that each $y_i$ is a Poisson random
+    variable rate $\lambda_i$ and
+    $$\log(\lambda_i) = \beta_0 + \sum_{k=1}^K \beta_k x_{ki},$$ or
+    equivalently
+    $$\lambda_i = e^{\beta_0 + \sum_{k=1}^K \beta_k x_{ki}}.$$
+
+# Poisson Regression
+
+-   As an example of Poisson regression, we can look at the number
+    visits to a doctor in a fixed period as a function of predictors
+    such as gender.
+
+-   Using a data-set of over 5000 people, we estimate (using mle) that
+    $$\log(\lambda_i) = 1.65 + 0.43\times x_i$$ where $x_i=1$ for a
+    female, and $x_i=0$ for a male.
+
+# Poisson Regression
+
+-   Using this example, we see that for a female $$\begin{aligned}
+    \lambda_{\text{Female}} &= e^{1.65 + 0.43} = 8.004\end{aligned}$$
+    and for males $$\begin{aligned}
+    \lambda_{\text{Male}} &= e^{1.65} = 5.2\end{aligned}$$
+
+-   In other words, the expected value for females is 8.2 and for males
+    it is 5.2.
+
+# Coefficients
+
+-   In Poisson regression, coefficients can be understood as follows.
+
+-   In the previous example, $$\begin{aligned}
+    \lambda_{\text{Female}} &= e^{1.65 + 0.43},\\
+    &= e^{1.65} e^{0.43},\\
+    \lambda_{\text{Male}} &= e^{1.65}.\end{aligned}$$
+
+-   This means that the exponent of the gender coefficient, i.e.
+    $e^{0.43}$, signifies the multiplicative increase to the average
+    rate of doctor visits for women relative men.
+
+-   In other words, women visit doctors on average $e^{0.43} = 1.53$
+    times more than men.
+
+# Coefficients
+
+-   In an arbitrary example with a single continuous predictor variable,
+    $$
+    \begin{aligned}
+    \lambda &= e^{\alpha+ \beta x_i},\\
+    &= e^{\alpha} e^{\beta x_i},\\
+    \end{aligned}
+    $$
+    If we increase $x_i$ by 1, we have
+    $$
+    \begin{aligned}
+    \lambda^+ &= e^{\alpha+ \beta (x_i+1)},\\
+     &= e^{\alpha+ \beta x_i + \beta},\\
+     &= e^{\alpha} e^{\beta x_i} e^\beta,\\
+     \end{aligned}
+     $$
+
+-   As $\lambda^+ = \lambda e^\beta$, we see that $e^\beta$ is the
+    multiplicative effect of an increase in one unit to the predictor
+    variable.
+
+# Example
+
+```{r, echo=T, results='hide'}
+doc_df <- read_csv(here('data/DoctorAUS.csv')) %>%
+  mutate(gender = ifelse(sex == 1, 'female', 'male'))
+
+M <- glm(doctorco ~ gender,
+         data = doc_df,
+         family = poisson)
+
+doc_df_new <- tibble(gender = c('female', 'male'))
+
+doc_df_new %>% 
+  add_predictions(M)
+
+doc_df_new %>% 
+  add_predictions(M, type='response')
+
+```
+
+# Model comparison
+
+```{r, echo=T, results='hide'}
+M_1 <- glm(doctorco ~ gender + insurance,
+           data = doc_df,
+           family = poisson)
+
+anova(M, M_1, test='Chisq')
+```
+
+# Exposure and offset
+
+-   In some problems, the length of time during which events are
+    measured varies across individuals.
+
+-   In the doctor visits example, we might have recordings of number of
+    visits per year for some people and number of visits per 9 months,
+    etc, for others.
+
+-   These situations are dealt with using an *exposure* term for each
+    individual.
+
+# Exposure and offset
+
+-   When using an exposure term, we use the original count data as
+    before, but treat $$y_i \sim \text{Poisson}(\lambda_i/u_i),$$ where
+    $u_i$ is a term signifying the relative exposure time for person
+    $i$.
+
+-   According to this, $$\begin{aligned}
+    \log(\lambda_i/u_i) &= \alpha + \beta x_i,\\
+    \log(\lambda_i) &= \alpha + \beta x_i + \log(u_i)\end{aligned}$$
+
+-   In other words, $y_i \sim \text{Poisson}(\lambda_i/u_i)$ is
+    equivalent to $y_i \sim \text{Poisson}(\lambda_i)$, where
+    $\log(\lambda_i) = \alpha + \beta x_i + \log(u_i)$.
+
+# Exposure and offset
+
+-   For example, suppose we monitor people's drinking at social
+    occasions. We find that three people drink $12$, $7$ and $3$ drinks
+    over the course of $7$, $5$ and $2$ hours, respectively.
+
+-   If we are trying to predict drinking as a function of predictor
+    variables, we ought to calibrate by the different time frames.
+
+-   Treating e.g. $12$ as a draw from $\text{Poisson}(\lambda_i/7)$
+    where $\log(\lambda_i/7) = \alpha + \beta x_i$ is identical to
+    treating $12$ as a draw from $\text{Poisson}(\lambda_i)$ where
+    $\log(\lambda_i) = \alpha + \beta x_i + \log(7)$.
+
+# Exposure and offset
+
+-   In general, exposure terms are treated as fixed offsets.
+
+-   If our data is $(y_1,x_1), (y_2,x_2) \ldots (y_n,x_n)$ with
+    exposures $u_1, u_2 \ldots u_n$, then we treat
+    $$y_i \sim \text{Poisson}(\lambda_i),$$ where
+    $$\log(\lambda_i) = \log(u_i) + \beta_0 + \sum_{k=1}^K\beta_k x_{ki}.$$
+
+# Example
+
+```{r, echo=T, results='hide'}
+insur_df <- read_csv(here('data/Insurance.csv')) %>%
+  mutate(District = factor(District))
+
+M <- glm(Claims ~ District + Group + Age + offset(log(Holders)),
+         data = insur_df,
+         family = poisson)
+
+```
+
+
+
+
+# The Poisson Distribution
+
+
+-   The mean of a Poisson distribution is equal to its rate parameter
+    $\lambda$.
+
+-   Its variance is also equal to $\lambda$.
+
+```{r, out.width='0.75\\textwidth', fig.align='center'}
+lambda_0 <- 3.5
+lambda_1 <- 5.0
+lambda_2 <- 10.0
+lambda_3 <- 15.0
+tibble(x = seq(0, 25),
+       y_0 = dpois(x, lambda = lambda_0),
+       y_1 = dpois(x, lambda = lambda_1),
+       y_2 = dpois(x, lambda = lambda_2),
+       y_3 = dpois(x, lambda = lambda_3)
+) %>% gather(lambda, density, -x) %>% 
+  ggplot(aes(x = x, y = density, col = lambda)) +
+  geom_line() + 
+  geom_point() +
+  ylab('P(x)') +
+  guides(col = FALSE)
+```
+As $\lambda$ increases, so too does the variance.
+
+# Means and variances in a Poisson distribution:
+
+- In a Poisson distribution, the variance of a sample should be approximately 
+  the same as the mean of a sample. 
+
+- Example 1:
+```{r, echo=T}
+x <- rpois(25, lambda = 5)
+c(mean(x), var(x), var(x)/mean(x))
+```
+- Example 2:
+```{r, echo=T}
+x <- rpois(25, lambda = 5)
+c(mean(x), var(x), var(x)/mean(x))
+```
+
+    
+# Overdispersion
+
+- If the variance of a sample is greater than would be expected according to a 
+  given theoretical model, then we say the data is *overdispersed*.
+  
+- In count data, if the variance of a sample is much greater than its
+  mean, we say it is overdispersed.
+  
+- Using a Poisson distribution in this situation, this is an example of model mis-specification.
+
+- It will also usually underestimate the standard errors in the Poisson model.
+  
+
+# Overdispersion
+
+- In the `bioChemists` data set, we have counts of the number of articles published
+  by PhD students in the last three years (`publications`):
+```{r, out.width='0.7\\textwidth', fig.align='center'}
+ggplot(bioChemists, aes(x=art)) + geom_histogram(col='white', binwidth = 1)
+```
+  
+
+```{r, echo=T}
+var(publications)/mean(publications)
+```
+
+
+# Overdispersion
+
+- This leads standard errors to be *under*estimated if we use a Poisson model:
+```{r, echo=T}
+M <- glm(publications ~ 1, family=poisson)
+summary(M)$coefficients
+```
+
+
+# Fixing overdispersion using a Quasi-poisson model
+
+- A *quasi* Poisson model allows us to correct over-dispersion
+```{r, echo=T}
+M <- glm(publications ~ 1, family=quasipoisson)
+summary(M)$coefficients
+```
+- It does so by calculating an overdispersion parameter 
+  (roughly, the ratio of the variance to the mean)
+  and multiplying the standard error by its square root.
+  
+- In this example, the overdispersion parameter is 
+  `r summary(M)$dispersion` and so its
+  square root is `r summary(M)$dispersion %>% sqrt()`.
+
+- Alternatively, a *negative binomial regression* is an alternative to Poisson regression
+  that can be used with overdispersed count data.
+  
+# Negative binomial distribution
+
+- A negative binomial distribution is a distribution over non-negative integers.
+- To understand the negative binomial distribution, we start with the binomial
+  distribution:
+- If, for example, we have a coin whose probability of coming up heads is $\theta$,
+  then the number of Heads in a sequence of $n$ flips will follow a 
+  binomial distribution.
+- In this example, an outcome of Heads can be termed a *success*.
+  
+  
+# Negative binomial distribution
+
+- Here is a binomial distribution where $n=25$ and $\theta=0.75$.
+```{r, out.width='0.9\\textwidth', fig.align='center'}
+
+n <- 25
+
+tibble(x = seq(0, n),
+       p = dbinom(x, size=n, prob=0.75)
+) %>% ggplot(aes(x = x, y = p)) + geom_bar(stat = 'identity')
+
+```
+  
+ 
+  
+# Negative binomial distribution
+
+- A *negative* binomial distribution gives the 
+  probability distribution over the number of *failures* (e.g. Tails)
+  before $r$ *successes* (e.g. $r$ Heads).
+- For example, here we have the number of Tails (*failures*) that occur before we observe $r=2$ Heads (*sucesses*), when the probability of Heads is $\theta=0.75$:
+```{r, out.width='0.8\\textwidth', fig.align='center'}
+
+n <- 25
+
+tibble(x = seq(0, n),
+       p = dnbinom(x, size=2, prob=0.75)
+) %>% ggplot(aes(x = x, y = p)) + geom_bar(stat = 'identity')
+
+```
+  
+  
+# Negative binomial distribution
+
+- Here, we have the number of Tails (*failures*) that occur before we observe $r=3$ Heads (*successes*), when the probability of Heads is $\theta=0.5$:
+```{r, out.width='0.9\\textwidth', fig.align='center'}
+n <- 25
+
+tibble(x = seq(0, n),
+       p = dnbinom(x, size=3, prob=0.5)
+) %>% ggplot(aes(x = x, y = p)) + geom_bar(stat = 'identity')
+
+```
+  
+    
+# Negative binomial distribution
+
+- The probability mass function for the negative binomial distribution is:
+$$
+\Prob{x = k \given r, \theta} = \binom{r+k-1}{k} \theta^r(1-\theta)^k
+$$
+or more generally
+$$
+\Prob{x = k \given r, \theta} = \frac{\Gamma(r + k)}{\Gamma(r) k!} \theta^r(1-\theta)^k,
+$$
+where $\Gamma()$ is a Gamma function ($\Gamma(n) = (n-1)!$).
+
+- In R, for any $k$, $r$, and $\theta$, we can calculate $\Prob{x = k \given r, \theta}$ using `dnbinom`, e.g.
+$\Prob{x = k = 2 \given r=3, \theta=0.75}$ is
+```{r, echo=T}
+dnbinom(2, 3, 0.75)
+```
+  
+# Negative binomial distribution
+
+- In the negative binomial distribution, the mean is 
+$$
+\mu = \frac{\theta}{1-\theta} \times r,
+$$
+and so 
+$$
+\theta = \frac{r}{r + \mu},
+$$
+and we can generally parameterize the distribution by $\mu$ and $r$.
+  
+# Why use negative binomial distribution?
+
+- A negative binomial distribution is equivalent as weighted sum of Poissons.
+
+```{r, out.width='0.75\\textwidth', fig.align='center'}
+lambda_0 <- 3.5
+lambda_1 <- 5.0
+lambda_2 <- 7.0
+lambda_3 <- 10.0
+tibble(x = seq(0, 25),
+       y_0 = dpois(x, lambda = lambda_0),
+       y_1 = dpois(x, lambda = lambda_1),
+       y_2 = dpois(x, lambda = lambda_2),
+       y_3 = dpois(x, lambda = lambda_3),
+       y_sum = (y_0 + y_1 + y_2 + y_3)/2
+) %>% gather(lambda, density, -x) %>% 
+  ggplot(aes(x = x, y = density, col = lambda)) +
+  geom_line() + 
+  geom_point() +
+  ylab('P(x)') +
+  guides(col = FALSE)
+```
+
+- So it is appropriate to use when the data can be seen as arising from a mixture of
+  Poisson distributions, each with different means.
+  
+  
+# Negative binomial regression
+
+- In negative binomial regression, we have observed counts $y_1, y_2 \ldots y_n$, and 
+  some predictor variables $x_1, x_2 \ldots x_n$,
+  and we assume that
+  $$
+  y_i \sim \mathrm{NegBinomial}(\mu_i, r),
+  $$
+  where $\mathrm{NegBinomial}(\mu_i, r)$ is a negative binomial with mean $\mu_i$ and a 
+  dispersion parameter $r$,
+  and then 
+  $$
+  \log(\mu_i) = \beta_0 + \beta x_i.
+  $$
+
+   
+# Example
+
+```{r, echo=T, results='hide'}
+M <- glm.nb(publications ~ gender, data = biochemists_Df)
+M1 <- glm.nb(publications ~ gender + married + I(children > 0), data = biochemists_Df)
+
+```
+
+# Binomial logistic regression
+
+* If $y_i$ is the number of "successes" in $n_i$ "trials", we can model this as
+$$
+\begin{aligned}
+y_i &\sim \textrm{Binomial}(\theta_i, n_i),\\
+\textrm{logit}(\theta_i) &= \beta_0 + \sum_{k=1}^K \beta_k x_{ki}
+\end{aligned}
+$$
+
+* If $n_i = 1$ for all $i$, then this is exactly binary logistic regression.
+
+* In general, it models the probability of something happening in a number of independent trials, and how the probability varies by the values of predictors.
+
+# Example 
+```{r, echo=T}
+golf_df <- read_csv(here('data/golf_putts.csv')) %>% 
+  mutate(failure = attempts - success,
+         p = success/attempts)
+
+M <- glm(cbind(success, failure) ~ distance,
+         family = binomial(link = 'logit'),
+         data = golf_df)
+```
+
+
+
+
+# Poisson Distribution
+```{r,echo=F}
+lambda <- 5.5
+```
+
+A sample from a Poisson distribution with $\lambda=`r lambda`$.
+```{r, out.width='0.75\\textwidth', fig.align='center'}
+tibble(x = seq(0, 25),
+       y = dpois(x, lambda = lambda)
+) %>% ggplot(aes(x = x, y = y)) +
+  geom_point() +
+  geom_segment(aes(x = x, xend = x, y = 0, yend = y), color = "grey50") +
+  ylab('P(x)')
+```
+
+
+# Zero inflated Poisson Distribution
+```{r,echo=F}
+lambda <- 5.5
+n <- 25
+z <- 0.2
+```
+
+A sample from a zero inflated Poisson distribution with $\lambda=`r lambda`$, with probability of *zero-component* is `r z`. 
+```{r, out.width='0.75\\textwidth', fig.align='center'}
+tibble(x = seq(0, n),
+       y = ((1-z)*dpois(x, lambda = lambda)) + (z * c(1, rep(0, n)))
+) %>% ggplot(aes(x = x, y = y)) +
+  geom_point() +
+  geom_segment(aes(x = x, xend = x, y = 0, yend = y), color = "grey50") +
+  ylab('P(x)')
+```
+
+
+# Poisson regression to Zero-Inflated Poisson regression
+
+-   In Poisson regression (with a single predictor, for simplicity), we
+    assume that each $y_i$ is a Poisson random variable with rate
+    $\lambda_i$ that is a function of the predictor $x_i$.
+
+-   In Zero-Inflated Poisson regression, we assume that each $y_i$ is
+    distributed as a Zero-Inflated Poisson mixture model:
+    $$y_i \sim \begin{cases} \textrm{Poisson}(\lambda_i)\quad &\text{if $z_i=0$},\\ 0, \quad &\text{if $z_i=1$} \end{cases}$$
+    where rate $\lambda_i$ and $\Prob{z_i=1}$ are functions of the
+    predictor $x_i$.
+
+# Zero-Inflated Poisson regression
+
+-   Assuming data $\{(x_i,y_i),(x_2,y_2) \ldots (x_n,y_n)\}$, Poisson
+    regression models this data as: $$\begin{aligned}
+    y_i &\sim \begin{cases} \textrm{Poisson}(\lambda_i)\quad &\text{if $z_i=0$},\\ 0, \quad &\text{if $z_i=1$} \end{cases},\\
+    z_i &\sim \textrm{Bernoulli}(\theta_i),\end{aligned}$$ where
+    $\theta_i$ and $\lambda_i$ are functions of $x_i$.
+
+# Zero-Inflated Poisson regression
+
+-   The $\theta_i$ and $\lambda_i$ variables are the usual suspects,
+    i.e. $$\log(\lambda_i ) = \alpha + \beta x_i,$$ and
+    $$\log\left(\frac{\theta_i}{1-\theta_i}\right) = a + bx_i.$$
+
+-   In other words, $\lambda_i$ is modelled just as in ordinary Poisson
+    regression and $\theta_i$ is modelled in logistic regression.
+
+# Examples
+
+```{r, echo=T, results='hide'}
+smoking_df <- read_csv(here('data/smoking.csv'))
+M <- glm(cigs ~ educ, data = smoking_df)
+M_zip <- zeroinfl(cigs ~ educ, data=smoking_df)
+
+Df_new <- data.frame(educ = seq(20))
+# Predited average smoking rate
+Df_new %>% 
+  add_predictions(M_zip, type='response')
+
+# Predicted average smoking rate of "smokers" 
+Df_new %>%
+  add_predictions(M_zip, type='count')
+
+# Predicted probability of being a "smoker" 
+Df_new %>% 
+  add_predictions(M_zip, type='zero') %>% 
+  mutate(pred = 1-pred)
+```
