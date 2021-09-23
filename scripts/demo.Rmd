@@ -22,7 +22,6 @@ library(tidyverse)
 library(knitr)
 ```
 
-
 # Exploratory analysis
 
 ```{r, echo = FALSE}
@@ -39,12 +38,13 @@ ggplot(ToothGrowth,
 
 # Linear model analysis
 
+```{=html}
 <!-- Here is a note to self...... 
 
 everything until the closing tag is commented ...
 
 -->
-
+```
 ```{r, echo = TRUE}
 M <- lm(len ~ dose * supp, data = ToothGrowth)
 ```
@@ -52,20 +52,19 @@ M <- lm(len ~ dose * supp, data = ToothGrowth)
 ## Results
 
 Here is the table of linear regression coefficients:
+
 ```{r}
 S <- summary(M)
 kable(S$coefficients, digits = 2)
 ```
 
-The $R^2$ value of the linear model is `r round(S$r.squared, 2)`.
-Or put another way,
-$$
+The $R^2$ value of the linear model is `r round(S$r.squared, 2)`. Or put another way, $$
 R^2 = `r round(S$r.squared, 2)`.
 $$
 
+As was shown by @polarbear1995 and chaos theory is a branch of mathematics [@williams1997chaos].
 
-
-As was shown by @polarbear1995 ....
-
+-   cow
+-   pig
 
 # References
