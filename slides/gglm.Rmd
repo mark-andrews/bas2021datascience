@@ -398,7 +398,7 @@ tibble(x = seq(0, 1, length.out = 1000),
 ```{r}
 N <- 25000
 tibble(x = runif(N),
-       y = logit(x)) %>% 
+       Y = logit(x)) %>% 
   ggplot(aes(x=y)) + geom_histogram(bins=50, col='white')
 ```
 
