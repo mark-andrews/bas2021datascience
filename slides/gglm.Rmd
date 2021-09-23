@@ -398,7 +398,7 @@ tibble(x = seq(0, 1, length.out = 1000),
 ```{r}
 N <- 25000
 tibble(x = runif(N),
-       Y = logit(x)) %>% 
+       y = logit(x)) %>% 
   ggplot(aes(x=y)) + geom_histogram(bins=50, col='white')
 ```
 
@@ -482,9 +482,9 @@ tibble(x = seq(-5, 5, length.out = 100),
 
 ```{r, results='hide', echo=T}
 affairs_df <- read_csv(here('data/affairs.csv')) %>% 
-  mutate(cheater = affairs > 0)
+  mutate(had_affair = affairs > 0)
 
-M <- glm(cheater ~ yearsmarried, 
+M <- glm(had_affair ~ yearsmarried, 
          family = binomial(link = 'logit'),
          data = affairs_df)
 ```
@@ -607,12 +607,12 @@ affairs_df_new %>%
 # Example
 
 ```{r, echo = T, results = 'hide'}
-M_1 <- glm(cheater ~ yearsmarried + age + gender, 
+M_1 <- glm(had_affair ~ yearsmarried + age + gender, 
            family = binomial(link = 'logit'),
            data = affairs_df)
 
 # The "null" model
-M_0 <- glm(cheater ~ yearsmarried, 
+M_0 <- glm(had_affair ~ yearsmarried, 
            family = binomial(link = 'logit'),
            data = affairs_df)
 
