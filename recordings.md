@@ -23,3 +23,4 @@ These are password protected, and you will have been given this password in the 
 
 * [Session 1: 8:30am to 10:30pm](https://vimeo.com/612517370)
 * [Session 2: 11:30 to 1:30pm](https://vimeo.com/612653501)
+* [Session 3: 2:30 to 4:30pm](https://vimeo.com/612834627)

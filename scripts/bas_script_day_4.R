@@ -76,7 +76,8 @@ M5 <- lm(gender ~ height + age, data= weight_df_2)
 
 affairs_df <- read_csv("https://raw.githubusercontent.com/mark-andrews/bas2021datascience/master/data/affairs.csv")
 
-affairs_df <- mutate(affairs_df, y = affairs > 0)
+affairs_df <- mutate(affairs_df, 
+                     y = affairs > 0)
 
 M6 <- glm(y ~ age, data = affairs_df, family = binomial(link = 'logit'))
 
@@ -92,3 +93,75 @@ data_df <- tibble(age = c(20, 30, 40, 50))
 predict(M6, 
         newdata = data_df, 
         type = 'response')
+
+library(modelr)
+data_df %>% 
+  add_predictions(M6, type = 'response')
+
+summary(M6)
+
+
+confint.default(M6)
+
+# factor by which the odds changes for a unit change in age
+exp(0.013920)
+
+M6 <- glm(y ~ age, data = affairs_df, family = binomial(link = 'logit'))
+M7 <- glm(y ~ age + yearsmarried, 
+          data = affairs_df, family = binomial(link = 'logit'))
+
+anova(M6, M7, test = 'Chisq')
+
+
+# Poisson and count data --------------------------------------------------
+
+doctor_df <- read_csv("https://raw.githubusercontent.com/mark-andrews/bas2021datascience/master/data/DoctorAUS.csv")
+
+
+doctor_df %>% pull(doctorco) %>% table()
+
+M8 <- glm(doctorco ~ age, 
+          data = doctor_df, 
+          family = poisson(link = 'log'))
+
+summary(M8)
+
+data_df <- tibble(age = seq(0.2, 0.8, by = 0.1))
+
+# predicted log of the mean of the Poisson distribution
+# for different values of age
+data_df %>% 
+  add_predictions(M8)
+
+
+# predicted mean of the Poisson distribution
+# for different values of age
+data_df %>% 
+  add_predictions(M8, type = 'response')
+
+# sample 100 values from a Poisson distribution whose mean
+# is 0.331
+rpois(100, lambda = 0.331)
+
+summary(M8)
+deviance(M8)
+
+M9 <- glm(doctorco ~ sex  + age + income + insurance, 
+          data = doctor_df, 
+          family = poisson(link = 'log'))
+
+deviance(M9)
+
+anova(M8, M9, test = 'Chisq')
+
+
+glm(doctorco ~ offset(2) , 
+          data = doctor_df %>% na.omit(), 
+          family = poisson(link = 'log'))
+
+
+smoking_df <- read_csv("https://raw.githubusercontent.com/mark-andrews/bas2021datascience/master/data/smoking.csv")
+
+library(pscl)
+M10 <- zeroinfl(cigs ~ educ, data = smoking_df)
+summary(M10)
